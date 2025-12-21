@@ -169,6 +169,7 @@ class Game:
 
     def __init__(self):
         pygame.init()
+         config.set_difficulty("medium")  # easy / medium / hard
         pygame.display.set_caption(config.title)
         self.screen = pygame.display.set_mode(config.display_dimension)
         self.clock = pygame.time.Clock()
@@ -260,6 +261,18 @@ class Game:
                 if event.key == pygame.K_h:
                     if not self.board.game_over and not self.board.win:
                         self.board.reveal_random_safe()
+                if event.key == pygame.K_1:
+                    config.set_difficulty("easy")
+                    self.reset()
+                    self.screen = pygame.display.set_mode(config.display_dimension)
+                if event.key == pygame.K_2:
+                    config.set_difficulty("medium")
+                    self.reset()
+                    self.screen = pygame.display.set_mode(config.display_dimension)
+                if event.key == pygame.K_3:
+                    config.set_difficulty("hard")
+                    self.reset()
+                    self.screen = pygame.display.set_mode(config.display_dimension)
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self.input.handle_mouse(event.pos, event.button)
         if (self.board.game_over or self.board.win) and self.started and not self.end_ticks_ms:
