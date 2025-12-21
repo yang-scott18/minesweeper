@@ -190,9 +190,10 @@ class Game:
     def _format_time(self, ms: int) -> str:
         """Format milliseconds as mm:ss string."""
         total_seconds = ms // 1000
+        hours = total_seconds // 3600
         minutes = total_seconds // 60
         seconds = total_seconds % 60
-        return f"{minutes:02d}:{seconds:02d}"
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
     def _result_text(self) -> str | None:
         """Return result label to display, or None if game continues."""
