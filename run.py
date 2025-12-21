@@ -10,6 +10,7 @@ The logic lives in components.Board; this module should not implement rules.
 """
 
 import sys
+import os
 
 import pygame
 
@@ -71,7 +72,7 @@ class Renderer:
                 )
         pygame.draw.rect(self.screen, config.color_grid, rect, 1)
 
-    def draw_header(self, remaining_mines: int, time_text: str) -> None:
+    def draw_header(self, remaining_mines: int, time_text: str, high_score_text: str) -> None:
         """Draw the header bar containing remaining mines and elapsed time."""
         pygame.draw.rect(
             self.screen,
@@ -84,6 +85,17 @@ class Renderer:
         right_label = self.header_font.render(right_text, True, config.color_header_text)
         self.screen.blit(left_label, (10, 12))
         self.screen.blit(right_label, (config.width - right_label.get_width() - 10, 12))
+        
+        hs_label = self.header_font.render(
+            f"Best: {high_score_text}",
+            True,
+            config.color_header_text,
+        )
+        self.screen.blit(
+            hs_label,
+            (config.width // 2 - hs_label.get_width() // 2, 12),
+        )
+
 
     def draw_result_overlay(self, text: str | None) -> None:
         """Draw a semi-transparent overlay with centered result text, if any."""
@@ -157,6 +169,7 @@ class Game:
 
     def __init__(self):
         pygame.init()
+        config.set_difficulty("medium")  # easy / medium / hard
         pygame.display.set_caption(config.title)
         self.screen = pygame.display.set_mode(config.display_dimension)
         self.clock = pygame.time.Clock()
@@ -168,6 +181,7 @@ class Game:
         self.started = False
         self.start_ticks_ms = 0
         self.end_ticks_ms = 0
+        self.high_score_ms = self._load_high_score()
 
     def reset(self):
         """Reset the game state and start a new board."""
@@ -178,6 +192,19 @@ class Game:
         self.started = False
         self.start_ticks_ms = 0
         self.end_ticks_ms = 0
+
+    def _load_high_score(self) -> int | None:
+        if not os.path.exists(config.highscore_file):
+            return None
+        try:
+            with open(config.highscore_file, "r") as f:
+                return int(f.read().strip())
+        except:
+            return None
+
+    def _save_high_score(self, ms: int) -> None:
+        with open(config.highscore_file, "w") as f:
+            f.write(str(ms))
 
     def _elapsed_ms(self) -> int:
         """Return elapsed time in milliseconds (stops when game ends)."""
@@ -190,9 +217,10 @@ class Game:
     def _format_time(self, ms: int) -> str:
         """Format milliseconds as mm:ss string."""
         total_seconds = ms // 1000
+        hours = total_seconds // 3600
         minutes = total_seconds // 60
         seconds = total_seconds % 60
-        return f"{minutes:02d}:{seconds:02d}"
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
     def _result_text(self) -> str | None:
         """Return result label to display, or None if game continues."""
@@ -209,7 +237,11 @@ class Game:
         self.screen.fill(config.color_bg)
         remaining = max(0, config.num_mines - self.board.flagged_count())
         time_text = self._format_time(self._elapsed_ms())
-        self.renderer.draw_header(remaining, time_text)
+        if self.high_score_ms is None:
+            high_score_text = "--:--"
+        else:
+            high_score_text = self._format_time(self.high_score_ms)
+        self.renderer.draw_header(remaining, time_text, high_score_text)
         now = pygame.time.get_ticks()
         for r in range(self.board.rows):
             for c in range(self.board.cols):
@@ -226,10 +258,30 @@ class Game:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     self.reset()
+                if event.key == pygame.K_h:
+                    if not self.board.game_over and not self.board.win:
+                        self.board.reveal_random_safe()
+                if event.key == pygame.K_1:
+                    config.set_difficulty("easy")
+                    self.reset()
+                    self.screen = pygame.display.set_mode(config.display_dimension)
+                if event.key == pygame.K_2:
+                    config.set_difficulty("medium")
+                    self.reset()
+                    self.screen = pygame.display.set_mode(config.display_dimension)
+                if event.key == pygame.K_3:
+                    config.set_difficulty("hard")
+                    self.reset()
+                    self.screen = pygame.display.set_mode(config.display_dimension)
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self.input.handle_mouse(event.pos, event.button)
         if (self.board.game_over or self.board.win) and self.started and not self.end_ticks_ms:
             self.end_ticks_ms = pygame.time.get_ticks()
+            if self.board.win:
+                elapsed = self.end_ticks_ms - self.start_ticks_ms
+                if self.high_score_ms is None or elapsed < self.high_score_ms:
+                    self.high_score_ms = elapsed
+                    self._save_high_score(elapsed)
         self.draw()
         self.clock.tick(config.fps)
         return True

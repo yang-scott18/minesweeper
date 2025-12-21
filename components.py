@@ -183,4 +183,19 @@ class Board:
             self.win = True
             for cell in self.cells:
                 if not cell.state.is_revealed and not cell.state.is_mine:
-                    cell.state.is_revealed = True
+                    cell.state.is_revealed = True                    
+                    
+    def reveal_random_safe(self) -> bool:
+        """Reveal a random unrevealed non-mine cell.
+        Returns True if a cell was revealed, False otherwise.
+        """
+        candidates = [
+            cell for cell in self.cells
+            if not cell.state.is_revealed and not cell.state.is_mine
+        ]
+        if not candidates:
+            return False
+            
+        cell = random.choice(candidates)
+        self.reveal(cell.col, cell.row)
+        return True
