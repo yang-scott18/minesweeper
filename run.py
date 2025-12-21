@@ -169,7 +169,7 @@ class Game:
 
     def __init__(self):
         pygame.init()
-         config.set_difficulty("medium")  # easy / medium / hard
+        config.set_difficulty("medium")  # easy / medium / hard
         pygame.display.set_caption(config.title)
         self.screen = pygame.display.set_mode(config.display_dimension)
         self.clock = pygame.time.Clock()
