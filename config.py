@@ -22,6 +22,43 @@ cols = 16
 rows = 16
 num_mines = 40
 
+# Difficulty presets
+DIFFICULTY_SETTINGS = {
+    "easy": {
+        "cols": 9,
+        "rows": 9,
+        "mines": 10,
+    },
+    "medium": {
+        "cols": 16,
+        "rows": 16,
+        "mines": 40,
+    },
+    "hard": {
+        "cols": 30,
+        "rows": 16,
+        "mines": 99,
+    },
+}
+
+def set_difficulty(level: str):
+    global cols, rows, num_mines
+    global width, height, display_dimension
+
+    setting = DIFFICULTY_SETTINGS.get(level)
+    if setting is None:
+        raise ValueError(f"Unknown difficulty: {level}")
+
+    cols = setting["cols"]
+    rows = setting["rows"]
+    num_mines = setting["mines"]
+
+    # Recalculate derived display size
+    width = margin_left + cols * cell_size + margin_right
+    height = margin_top + rows * cell_size + margin_bottom
+    display_dimension = (width, height)
+
+
 # Cell size and margins
 cell_size = 32
 margin_left = 20
